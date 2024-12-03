@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s # Интервал опроса метрик
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090'] # Prometheus сам себя опрашивает
+
+  - job_name: 'pool-alph'
+    static_configs:
+      - targets: ['localhost:9600'] # Logstash транслирует метрики из kafka

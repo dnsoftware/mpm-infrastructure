@@ -1,0 +1,19 @@
+postgresql_version: "14"
+patroni_config_dir: "/etc/patroni"
+postgresql_data_dir: "/var/lib/postgresql/{{ postgresql_version }}/data"
+pgbouncer_listen_port: 6432
+pgbouncer_listen_addr: "0.0.0.0"
+pgbouncer_auth_type: "md5"
+pgbouncer_pool_mode: "session"
+cluster_name: "pg_cluster"
+node_name: "{{ inventory_hostname }}"
+patroni_etcd_url: "{{ inventory_hostname }}:2379"
+postgresql_superuser_password: "superpass"
+replication_password: "replpassword"
+etcd_username: "root"
+etcd_password: "etcdpassword"
+
+
+
+#etcd_initial_cluster: "node1=http://31.128.39.18:2380,node2=http://31.129.98.136:2380,node3=http://45.147.179.134:2380"
+#etcd_cluster: "http://31.128.39.18:2379,http://31.129.98.136:2379,http://45.147.179.134:2379"

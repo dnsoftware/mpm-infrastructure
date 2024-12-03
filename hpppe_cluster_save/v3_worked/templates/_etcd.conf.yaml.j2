@@ -1,0 +1,10 @@
+data-dir: /var/lib/etcd/{{ inventory_hostname }}.etcd
+
+name: {{ inventory_hostname }}
+initial-advertise-peer-urls: http://{{ ansible_host }}:2380
+listen-peer-urls: http://0.0.0.0:2380
+advertise-client-urls: http://{{ ansible_host }}:2379
+listen-client-urls: http://0.0.0.0:2379
+initial-cluster-state: new
+initial-cluster: node1=http://{{ hostvars['node1'].ansible_host }}:2380,node2=http://{{ hostvars['node2'].ansible_host }}:2380,node3=http://{{ hostvars['node3'].ansible_host }}:2380
+

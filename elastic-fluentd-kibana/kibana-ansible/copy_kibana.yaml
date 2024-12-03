@@ -1,0 +1,11 @@
+---
+- name: Copy and install .deb package
+  hosts: kibana
+  become: true
+  tasks:
+    - name: Copy .deb file to remote server
+      copy:
+        src: kibana-8.16.1-amd64.deb
+        dest: /tmp/kibana.deb
+        mode: '0644'
+

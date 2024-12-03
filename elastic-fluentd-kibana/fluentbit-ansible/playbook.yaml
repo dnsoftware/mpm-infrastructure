@@ -1,0 +1,69 @@
+---
+- name: Install Fluent Bit
+  hosts: fluentbit
+  become: yes
+  vars:
+    elastic_node: 31.128.37.253
+    elastic_port: 9200
+  tasks:
+    # Обновление списка пакетов
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # Установка зависимостей
+    - name: Install dependencies
+      apt:
+        name:
+          - curl
+          - apt-transport-https
+          - lsb-release
+        state: present
+
+#    # Добавление GPG-ключа репозитория
+#    - name: Add Fluent Bit GPG key
+#      shell: curl -fsSL https://packages.fluentbit.io/fluentbit.key | gpg --dearmor -o /usr/share/keyrings/fluentbit.gpg
+#      args:
+#        warn: false
+#
+#    - name: Add Fluent Bit repository
+#      apt_repository:
+#        repo: "deb [signed-by=/usr/share/keyrings/fluentbit.gpg] https://packages.fluentbit.io/ubuntu/focal focal main"
+#        state: present
+#
+#
+#    # Установка Fluent Bit
+#    - name: Install Fluent Bit
+#      apt:
+#        name: td-agent-bit
+#        state: present
+#        allow_unauthenticated: yes
+
+    - name: Install Fluent Bit using curl and pipe to sh
+      shell: "curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh"
+      args:
+        creates: /usr/local/bin/td-agent-bit  # Указываем путь, который будет создан после успешной установки
+
+#    # Копирование конфигурационного файла
+#    - name: Deploy Fluent Bit configuration
+#      copy:
+#        src: ./fluent-bit.conf
+#        dest: /etc/td-agent-bit/td-agent-bit.conf
+#        owner: root
+#        group: root
+#        mode: '0644'
+
+    - name: Configure Fluentbit
+      template:
+        src: td-agent-bit.conf.j2
+        dest: /etc/fluent-bit/fluent-bit.conf
+#        owner: root
+#        group: fluentbit
+#        mode: 0644
+
+    # Перезапуск службы Fluent Bit
+    - name: Restart Fluent Bit service
+      service:
+        name: fluent-bit
+        state: restarted

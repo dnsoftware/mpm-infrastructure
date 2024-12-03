@@ -1,0 +1,13 @@
+server.host: "0.0.0.0"
+elasticsearch.hosts: ["http://localhost:9200"]
+
+logging:
+  appenders:
+    file:
+      type: file
+      fileName: /var/log/kibana/kibana.log  # Укажите путь к файлу логов
+      layout:
+        type: pattern                      # Формат логов: "pattern" или "json"
+  root:
+    appenders: [file]                      # Используем созданный аппендер
+    level: info                            # Уровень логирования: error, warn, info, debug

@@ -1,0 +1,27 @@
+---
+- name: Deploy Kafka cluster
+  hosts: zookeeper
+  become: yes
+  tasks:
+    - name: Creates directory
+      ansible.builtin.file:
+        path: /home/{{ ansible_user }}
+        state: directory
+
+    - name: "Create configuration file for etcd"
+      template:
+        src: templates/docker-compose.yaml.j2
+        dest: /home/{{ ansible_user }}/docker-compose.yml
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+
+    - name: Start Kafka and Zookeeper cluster using Docker Compose
+      command: "docker compose -f /home/{{ ansible_user }}/docker-compose.yml up -d"
+      args:
+        chdir: "/home/{{ ansible_user }}"
+
+
+
+
+Не доделано!!!

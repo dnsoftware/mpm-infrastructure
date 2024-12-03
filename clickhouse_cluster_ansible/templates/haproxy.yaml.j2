@@ -1,0 +1,27 @@
+global
+  log /dev/log local0
+  log /dev/log local1 notice
+  maxconn 4096
+  user haproxy
+  group haproxy
+  daemon
+
+defaults
+  log global
+  option httplog
+  option dontlognull
+  retries 3
+  timeout connect 5000ms
+  timeout client  50000ms
+  timeout server  50000ms
+
+frontend clickhouse_frontend
+  bind *:9001
+  default_backend clickhouse_backend
+
+backend clickhouse_backend
+  balance roundrobin
+{% for host in groups['clickhouse_nodes'] %}
+  server {{ host }} {{ hostvars[host].ansible_host }}:9000 check
+{% endfor %}
+

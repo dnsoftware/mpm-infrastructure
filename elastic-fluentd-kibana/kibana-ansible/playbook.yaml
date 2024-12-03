@@ -1,0 +1,51 @@
+---
+- name: Install and configure Elasticsearch cluster
+  hosts: kibana
+  become: true
+
+  vars:
+
+  tasks:
+    # Установка kibana из пакета. Предварительно скопировать (плейбук copy_kibana.yaml) пакет установки kibana в директории /tmp
+    - name: Install the .deb package
+      command:
+        cmd: dpkg -i /tmp/kibana.deb
+
+
+    - name: Configure Kibana
+      ansible.builtin.template:
+        src: kibana.yml.j2
+        dest: /etc/kibana/kibana.yml
+        owner: kibana
+        group: kibana
+        mode: '0644'
+
+    - name: Создать директорию для переопределений systemd, если она не существует
+      file:
+        path: /etc/systemd/system/kibana.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Add override
+      ansible.builtin.template:
+        src: kibana.override.conf.j2
+        dest: /etc/systemd/system/kibana.service.d/override.conf
+        owner: kibana
+        group: kibana
+        mode: '0644'
+
+    - name: Добавить переменную окружения в [Service] секцию Kibana
+      lineinfile:
+        path: /etc/systemd/system/kibana.service.d/override.conf
+        line: 'Environment="DISABLE_OPENSSL_LEGACY_PROVIDER=true"'
+        create: yes
+        insertafter: '[Service]'
+
+    - name: Перезагрузить конфигурацию systemd
+      command: systemctl daemon-reload
+
+    - name: Enable and start Kibana
+      ansible.builtin.systemd:
+        name: kibana
+        enabled: true
+        state: started

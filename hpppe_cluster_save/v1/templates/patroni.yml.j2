@@ -1,0 +1,85 @@
+name: {{ node_name }}
+#   namespace: /patroni/
+scope: {{ cluster_name }}
+
+restapi:
+    listen: 0.0.0.0:8008
+    connect_address: {{ ansible_host }}:8008
+#    protocol: https
+#    cacert: /etc/etcd/ssl/ca.crt         # путь к корневому сертификату CA
+#    cert: /etc/etcd/ssl/server.crt       # путь к клиентскому сертификату Patroni
+#    key: /etc/etcd/ssl/server.key        # путь к приватному ключу Patroni
+#    authentication:
+#        username: patroni
+#        password: patroni
+
+etcd3:
+    hosts: {% for host in groups['etcd_nodes'] %}{{ hostvars[host].ansible_host }}:2379{% if not loop.last %},{% endif %}{% endfor %}
+
+    version: v3
+    protocol: https
+    cacert: /etc/etcd/ssl/ca.crt         # путь к корневому сертификату CA
+    cert: /etc/etcd/ssl/server.crt       # путь к клиентскому сертификату Patroni
+    key: /etc/etcd/ssl/server.key        # путь к приватному ключу Patroni
+    username: "{{ etcd_username }}"
+    password: "{{ etcd_password }}"
+
+bootstrap:
+    dcs:
+        ttl: 100
+        loop_wait: 10
+        retry_timeout: 10
+        maximum_lag_on_failover: 1048576
+        postgresql:
+            use_pg_rewind: true
+            use_slots: true
+            parameters:
+                wal_level: replica
+                hot_standby: "on"
+                wal_keep_segments: 5120
+                max_wal_senders: 5
+                max_replication_slots: 5
+                checkpoint_timeout: 30
+    initdb:
+    - auth-host: md5
+    - auth-local: peer
+    - encoding: UTF8
+    - data-checksums
+#    - locale: ru_RU.UTF-8
+    pg_hba:
+    - host replication postgres ::1/128 md5
+    - host replication postgres 127.0.0.1/8 md5
+{% for host in groups['etcd_nodes'] %}
+    - host replication replicator {{ hostvars[host].ansible_host }}/24 md5
+{% endfor %}
+    - host all all 0.0.0.0/0 md5
+    - host replication all 127.0.0.1/32 md5
+    - host replication all ::1/128 md5
+    users:
+        admin:
+        password: '{{ postgresql_superuser_password }}'
+        options:
+            - superuser
+
+postgresql:
+    listen: 0.0.0.0:5432
+    connect_address: {{ ansible_host }}:5432
+    #conf_dir: /etc/postgresql/11.9/main
+    bin_dir: /usr/lib/postgresql/{{ postgresql_version }}/bin
+    data_dir: "{{ postgresql_data_dir }}"
+    pgpass: /tmp/pgpass
+    authentication:
+        superuser:
+            username: postgres
+            password: '{{ postgresql_superuser_password }}'
+        replication:
+            username: replicator
+            password: '{{ replication_password }}'
+    parameters:
+        unix_socket_directories: '/tmp/pgsql/'
+
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false

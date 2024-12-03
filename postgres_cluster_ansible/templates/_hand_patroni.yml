@@ -1,0 +1,79 @@
+name: patroni1
+#namespace: /db/
+scope: edir_cluster
+
+restapi:
+    listen: 0.0.0.0:8008
+    connect_address: 31.128.39.18:8008
+    authentication:
+        username: patroni
+        password: patroni
+
+etcd3:
+    hosts: 31.128.39.18:2379,31.129.98.136:2379,45.147.179.134:2379
+#    username: root
+#    password: bVeSXiUx
+
+bootstrap:
+    dcs:
+        ttl: 100
+        loop_wait: 10
+        retry_timeout: 10
+        maximum_lag_on_failover: 1048576
+        postgresql:
+            use_pg_rewind: true
+            use_slots: true
+            parameters:
+                wal_level: replica
+                hot_standby: "on"
+                wal_keep_segments: 5120
+                max_wal_senders: 5
+                max_replication_slots: 5
+                checkpoint_timeout: 30
+    initdb:
+    - auth-host: md5
+    - auth-local: peer
+    - encoding: UTF8
+    - data-checksums
+#    - locale: ru_RU.UTF-8
+    pg_hba:
+    - host replication postgres ::1/128 md5
+    - host replication postgres 127.0.0.1/8 md5
+    - host replication postgres 31.128.39.18/24 md5
+    - host replication postgres 31.129.98.136/24 md5
+    - host replication postgres 45.147.179.134/24 md5
+    - host all all 0.0.0.0/0 md5
+#    - host replication replicator samenet md5
+    - host replication all 127.0.0.1/32 md5
+    - host replication all ::1/128 md5
+    users:
+        admin:
+        password: admin
+        options:
+            - superuser
+
+postgresql:
+    listen: 0.0.0.0:5432
+    connect_address: 31.128.39.18:5432
+    #conf_dir: /etc/postgresql/11.9/main
+    bin_dir: /usr/lib/postgresql/14/bin
+    data_dir: /var/lib/postgresql/14/data
+    pgpass: /tmp/pgpass
+    authentication:
+        superuser:
+            username: postgres
+            password: superpass
+        replication:
+            username: postgres
+            password: superpass
+        rewind:
+            username: rewind_user
+            password: superpass
+    parameters:
+        unix_socket_directories: '/var/lib/pgsql/'
+
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false

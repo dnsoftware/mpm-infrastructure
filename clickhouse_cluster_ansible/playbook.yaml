@@ -1,0 +1,92 @@
+---
+- name: Install and configure ClickHouse cluster
+  hosts: clickhouse_nodes
+  become: yes
+  tasks:
+    - name: Install required packages for adding the repository
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - dirmngr
+        state: present
+        update_cache: yes
+
+#    - name: Add ClickHouse GPG key
+#      apt_key:
+#        url: https://packages.clickhouse.com/keys/clickhouse.asc
+#        state: present
+
+    - name: Add key
+      shell: apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 8919F6BD2B48D754
+
+
+#    - name: Add ClickHouse repository
+#      apt_repository:
+#        repo: "deb https://packages.clickhouse.com/deb stable main"
+#        state: present
+#        filename: clickhouse
+
+#    - name: Установка дополнительных пакетов
+#      apt:
+#        name:
+#          - apt-transport-https
+#          - ca-certificates
+#          - dirmngr
+#        update_cache: true
+#
+#
+##    - name: Добавление репозитория ClickHouse
+##      apt_repository:
+##        repo: deb https://repo.clickhouse.com/deb/stable/main/
+##        state: present
+#
+    - name: Add repo
+      shell: echo "deb https://packages.clickhouse.com/deb stable main" | sudo tee /etc/apt/sources.list.d/clickhouse.list
+
+    - name: Apt update
+      shell: sudo apt update
+
+#    - name: Update and upgrade apt packages
+#      apt:
+#        upgrade: yes
+#        update_cache: yes
+#        cache_valid_time: 86400
+
+    - name: Install ClickHouse
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - clickhouse-server
+        - clickhouse-client
+
+    - name: Create ClickHouse configuration directory
+      file:
+        path: /etc/clickhouse-server/conf.d
+        state: directory
+
+    - name: Configure ZooKeeper for replication
+      template:
+        dest: /etc/clickhouse-server/conf.d/zookeeper.xml
+        src: zookeeper.xml.j2
+        mode: '0644'
+
+    - name: Configure ClickHouse cluster
+      template:
+        dest: /etc/clickhouse-server/conf.d/cluster.xml
+        src: cluster.xml.j2
+        mode: '0644'
+
+    - name: Configure ClickHouse listen_host
+      lineinfile:
+        path: /etc/clickhouse-server/config.xml
+        regexp: '^(.*<!-- <listen_host>0.0.0.0</listen_host> -->).*'
+        line: '<listen_host>0.0.0.0</listen_host>'
+        state: present
+
+    - name: Restart ClickHouse service
+      service:
+        name: clickhouse-server
+        state: restarted
+

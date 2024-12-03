@@ -1,0 +1,60 @@
+scope: {{ cluster_name }}
+namespace: /service/
+name: {{ node_name }}
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: {{ ansible_host }}:8008
+
+etcd3:
+#  host: {{ patroni_etcd_url }}
+  hosts: {% for host in groups['etcd_nodes'] %}{{ hostvars[host].ansible_host }}:2379{% if not loop.last %},{% endif %}{% endfor %}
+
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+  initdb:
+  - encoding: UTF8
+  - data-checksums
+
+  pg_hba:
+  - local all postgres peer
+{% for host in groups['etcd_nodes'] %}
+  - host replication replicator {{ hostvars[host].ansible_host }}/24 md5
+{% endfor %}
+
+  - host replication replicator 127.0.0.1/32 trust
+#  - host all postgres ::1/128 md5
+#  - host all postgres 127.0.0.1/8 md5
+#{% for host in groups['etcd_nodes'] %}
+#  - host all postgres {{ hostvars[host].ansible_host }}/24 md5
+#{% endfor %}
+
+  - host all all 0.0.0.0/0 md5
+
+  users:
+    admin:
+      password: '{{ postgresql_superuser_password }}'
+      options:
+        - createrole
+        - createdb
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: {{ ansible_host }}:5432
+  data_dir: "{{ postgresql_data_dir }}"
+  bin_dir: /usr/lib/postgresql/{{ postgresql_version }}/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: postgres
+      password: '{{ postgresql_superuser_password }}'
+    superuser:
+      username: postgres
+      password: '{{ postgresql_superuser_password }}'
+  parameters:
+    unix_socket_directories: '.'

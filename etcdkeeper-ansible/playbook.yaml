@@ -1,0 +1,125 @@
+- hosts: etcd
+  become: True
+  tasks:
+#    - name: "Ask for credentials etcd root"
+#      pause:
+#        prompt: "Enter etcd root password: "
+#        echo: no
+#      register: etcd_root_password
+#    - name: Create user 'root' with TLS using curl
+#      shell: |
+#        curl --cacert /etc/etcd/ssl/ca.crt \
+#             --cert /etc/etcd/ssl/server.crt \
+#             --key /etc/etcd/ssl/server.key \
+#             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/user/add \
+#             -d '{"name": "root", "password": "{{ etcd_root_password.user_input }}"}'
+#
+#    - name: Create 'root' role with TLS using curl
+#      shell: |
+#        curl --cacert /etc/etcd/ssl/ca.crt \
+#             --cert /etc/etcd/ssl/server.crt \
+#             --key /etc/etcd/ssl/server.key \
+#             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/role/add \
+#             -d '{"name": "root"}'
+#
+#    - name: Grant 'root' role to 'root' user with TLS using curl
+#      shell: |
+#        curl --cacert /etc/etcd/ssl/ca.crt \
+#             --cert /etc/etcd/ssl/server.crt \
+#             --key /etc/etcd/ssl/server.key \
+#             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/user/grant \
+#             -d '{"user": "root", "role": "root"}'
+#
+#    - name: Enable authentication in etcd with TLS using curl
+#      shell: |
+#        curl --cacert /etc/etcd/ssl/ca.crt \
+#             --cert /etc/etcd/ssl/server.crt \
+#             --key /etc/etcd/ssl/server.key \
+#             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/enable
+#
+
+    - name: "Create directory for etcdkeeper binaries"
+      file:
+        path: /opt/etcdkeeper/bin
+        state: directory
+        owner: root
+        group: root
+        mode: 0700
+
+    - name: "Download the tarball into the /tmp directory"
+      get_url:
+        url: https://github.com/evildecay/etcdkeeper/releases/download/v0.7.8/etcdkeeper-v0.7.8-linux_x86_64.tar.gz
+        dest: /tmp/etcdkeeper.tar.gz
+        owner: root
+        group: root
+        mode: 0600
+        force: True
+        validate_certs: no
+    - name: "Extract the contents of the tarball"
+      unarchive:
+        src: /tmp/etcdkeeper.tar.gz
+        dest: /opt/etcdkeeper/bin/
+#        owner: root
+#        group: root
+#        mode: 0600
+#        extra_opts:
+#          - --strip-components=1
+        decrypt: True
+        remote_src: True
+  
+# Example 7z archive unpack
+#    - name: "Download the zip into the /tmp directory"
+#      get_url:
+#        url: https://github.com/evildecay/etcdkeeper/releases/download/v0.7.8/etcdkeeper-v0.7.8-linux_x86_64.zip
+#        dest: /tmp/etcdkeeper.zip
+#        owner: root
+#        group: root
+#        mode: 0600
+#        force: yes
+#        validate_certs: no
+#    - name: "Ensure p7zip is installed"
+#      apt:
+#        name: p7zip-full
+#        state: present
+#    - name: Unpack the 7z archive
+#      command: "7z x -y /tmp/etcdkeeper.zip -o/opt/etcdkeeper/bin"
+#      args:
+#        chdir: /opt/etcdkeeper/bin
+#      register: unzip_output
+#    - name: Debug unzip output
+#      debug:
+#        var: unzip_output
+
+    - name: "Set permissions for etcdkeeper"
+      file:
+        path: /opt/etcdkeeper/bin/etcdkeeper
+        state: file
+        owner: root
+        group: root
+        mode: 0700
+    - name: "Add /opt/etcdkeeper/bin/ to the $PATH environment variable"
+      lineinfile:
+        path: /etc/profile
+        line: export PATH="$PATH:/opt/etcdkeeper/bin"
+        state: present
+        create: True
+        insertafter: EOF
+    - name: "Create a etcdkeeper service"
+      copy:
+        src: files/etcdkeeper.service
+        remote_src: False
+        dest: /etc/systemd/system/etcdkeeper.service
+        owner: root
+        group: root
+        mode: 0644
+    - name: "Stop the etcdkeeper service"
+      command: systemctl stop etcdkeeper
+
+    - name: "Enable the etcdkeeper service"
+      command: systemctl enable etcdkeeper
+
+    - name: "Start the etcdkeeper service"
+      command: systemctl restart etcdkeeper
+
+
+

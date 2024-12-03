@@ -1,0 +1,21 @@
+[ req ]
+default_bits       = 4096                     # Размер ключа (2048 или больше)
+prompt             = no                       # Отключение интерактивного режима
+default_md         = sha256                   # Хеш-функция
+distinguished_name = dn                        # Раздел с общими сведениями
+x509_extensions = v3_ca
+
+[ dn ]
+C  = RU                                       # Страна (например, US, RU)
+ST = Moscow                                   # Штат/область
+L  = Moscow                                   # Город
+O  = MPMSystem                                # Организация
+OU = IT Department                            # Отдел
+CN = Root CA                                  # Common name
+
+
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+basicConstraints = critical,CA:TRUE,pathlen:0
+keyUsage = critical, keyCertSign, digitalSignature, cRLSign

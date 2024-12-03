@@ -1,0 +1,3 @@
+redis_password: "redispass"
+#redis_dir: "/opt/redis_ha/redis"
+redis_dir: "/var/lib/redis"

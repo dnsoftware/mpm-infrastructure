@@ -1,0 +1,7 @@
+---
+- name: 
+  hosts: keepalived
+  tasks:
+    - name: Print all play hosts
+      debug:
+        msg: "Hosts in play: {{ ansible_play_hosts }}"

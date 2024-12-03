@@ -1,0 +1,229 @@
+- hosts: localhost
+  gather_facts: False
+  become: False
+  tasks:
+    - name: "Create ./artifacts directory to house keys and certificates"
+      file:
+        path: ./artifacts
+        state: directory
+    - name: "Generate private key for each member"
+      openssl_privatekey:
+        path: ./artifacts/{{item}}.key
+        type: RSA
+        size: 4096
+        state: present
+        force: True
+      with_items: "{{ groups['etcd'] }}"
+
+    - name: "Generate CSR for each member"
+      openssl_csr:
+        path: ./artifacts/{{item}}.csr
+        privatekey_path: ./artifacts/{{item}}.key
+        common_name: "{{item}}"
+        key_usage:
+          - digitalSignature
+        extended_key_usage:
+          - serverAuth
+          - clientAuth
+        subject_alt_name:
+          - IP:{{ hostvars[item].ansible_host}}
+          - IP:127.0.0.1
+        force: True
+      with_items: "{{ groups['etcd'] }}"
+
+    - name: "Generate an `etcd` member certificate signed with our own CA certificate"
+      openssl_certificate:
+        path: ./artifacts/{{item}}.crt
+        csr_path: ./artifacts/{{item}}.csr
+        ownca_path: ~/projects/mpmsystem/infrastructure/cacert/ca.crt                # файл корневого сертификата (генерируется отдельно)
+        ownca_privatekey_path: ~/projects/mpmsystem/infrastructure/cacert/ca.key     # файл приватного ключа корневого сертификата (генерируется отдельно)
+        provider: ownca
+        force: True
+      with_items: "{{ groups['etcd'] }}"
+
+    - name: "Make .pem file (certicate and key files concatenate)"
+      shell: cat ./artifacts/{{item}}.crt ./artifacts/{{item}}.key > ./artifacts/{{item}}_crt_key.pem
+      with_items: "{{ groups['etcd'] }}"
+
+- hosts: etcd
+  become: True
+  tasks:
+    - name: "Create directory for etcd binaries"
+      file:
+        path: /opt/etcd/bin
+        state: directory
+        owner: root
+        group: root
+        mode: 0700
+    - name: "Download the tarball into the /tmp directory"
+      get_url:
+        url: https://github.com/etcd-io/etcd/releases/download/v3.5.16/etcd-v3.5.16-linux-amd64.tar.gz
+        dest: /tmp/etcd.tar.gz
+        owner: root
+        group: root
+        mode: 0600
+        force: True
+        validate_certs: no
+    - name: "Extract the contents of the tarball"
+      unarchive:
+        src: /tmp/etcd.tar.gz
+        dest: /opt/etcd/bin/
+        owner: root
+        group: root
+        mode: 0600
+        extra_opts:
+          - --strip-components=1
+        decrypt: True
+        remote_src: True
+    - name: "Set permissions for etcd"
+      file:
+        path: /opt/etcd/bin/etcd
+        state: file
+        owner: root
+        group: root
+        mode: 0700
+    - name: "Set permissions for etcdctl"
+      file:
+        path: /opt/etcd/bin/etcdctl
+        state: file
+        owner: root
+        group: root
+        mode: 0700
+    - name: "Add /opt/etcd/bin/ to the $PATH environment variable"
+      lineinfile:
+        path: /etc/profile
+        line: export PATH="$PATH:/opt/etcd/bin"
+        state: present
+        create: True
+        insertafter: EOF
+    - name: "Set the ETCDCTL_API environment variable to 3"
+      lineinfile:
+        path: /etc/profile
+        line: export ETCDCTL_API=3
+        state: present
+        create: True
+        insertafter: EOF
+
+    - name: "Create a etcd service"
+      copy:
+        src: files/etcd.service
+        remote_src: False
+        dest: /etc/systemd/system/etcd.service
+        owner: root
+        group: root
+        mode: 0644
+    - name: "Stop the etcd service"
+      command: systemctl stop etcd
+    - name: "Create a data directory"
+      file:
+        path: /var/lib/etcd/{{ inventory_hostname }}.etcd
+        state: "{{ item }}"
+        owner: root
+        group: root
+        mode: 0755
+      with_items:
+        #- absent
+        - directory
+
+    - name: "Create directory for etcd configuration"
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      with_items:
+        - /etc/etcd
+        - /etc/etcd/ssl
+    - name: "Copy over the CA certificate"
+      copy:
+        src: ~/projects/mpmsystem/infrastructure/cacert/ca.crt
+        remote_src: False
+        dest: /etc/etcd/ssl/ca.crt
+        owner: root
+        group: root
+        mode: 0644
+    - name: "Copy over the `etcd` member certificate"
+      copy:
+        src: ./artifacts/{{inventory_hostname}}.crt
+        remote_src: False
+        dest: /etc/etcd/ssl/server.crt
+        owner: root
+        group: root
+        mode: 0644
+    - name: "Copy over the `etcd` member key"
+      copy:
+        src: ./artifacts/{{inventory_hostname}}.key
+        remote_src: False
+        dest: /etc/etcd/ssl/server.key
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: "Copy .pem certs"
+      copy:
+        src: ./artifacts/{{inventory_hostname}}_crt_key.pem
+        remote_src: False
+        dest: /etc/etcd/ssl/cert_crt_key.pem
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: "Create configuration file for etcd"
+      template:
+        src: templates/etcd.conf.yaml.j2
+        dest: /etc/etcd/etcd.conf.yaml
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: "Enable the etcd service"
+      command: systemctl enable etcd
+
+    - name: "Start the etcd service"
+      command: systemctl restart etcd
+
+
+
+# Create user root and enable authorisation
+- hosts: etcdkeeper
+  become: True
+  tasks:
+    - name: "Ask for credentials etcd root"
+      pause:
+        prompt: "Enter etcd root password: "
+        echo: no
+      register: etcd_root_password
+    - name: Create user 'root' with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/user/add \
+             -d '{"name": "root", "password": "{{ etcd_root_password.user_input }}"}'
+
+    - name: Create 'root' role with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/role/add \
+             -d '{"name": "root"}'
+
+    - name: Grant 'root' role to 'root' user with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/user/grant \
+             -d '{"user": "root", "role": "root"}'
+
+    - name: Enable authentication in etcd with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/enable
+
+
+

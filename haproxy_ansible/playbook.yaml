@@ -1,0 +1,31 @@
+- hosts: haproxy
+  become: True
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: yes
+
+    - name: HAProxy install
+      apt:
+        name: haproxy
+        state: present
+
+    - name: Create configuration file
+      template:
+        src: haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+
+    - name: "Enable the haproxy service"
+      command: systemctl enable haproxy
+
+    - name: "Start the haproxy service"
+      command: systemctl restart haproxy
+
+    - name: Проверка статуса HAProxy
+      command: systemctl status haproxy
+      register: haproxy_status
+      ignore_errors: yes
+
+    - debug:
+        var: haproxy_status.stdout
+

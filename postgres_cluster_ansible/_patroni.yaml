@@ -1,0 +1,49 @@
+---
+- hosts: patroni_nodes
+  become: yes
+  tasks:
+    - name: Установка Patroni и PostgreSQL
+      apt:
+        name:
+          - patroni
+          - postgresql
+        state: present
+
+    - name: Настройка Patroni
+      copy:
+        dest: /etc/patroni/patroni.yml
+        content: |
+          scope: postgresql-cluster
+          name: "{{ inventory_hostname }}"
+          etcd:
+            host: "{{ etcd_cluster }}"
+          postgresql:
+            listen: 0.0.0.0:5432
+            connect_address: "{{ ansible_host }}:5432"
+            data_dir: /var/lib/postgresql/data
+            bin_dir: /usr/lib/postgresql/13/bin
+            authentication:
+              superuser:
+                username: postgres
+                password: "{{ postgresql_superuser_password }}"
+              replication:
+                username: replicator
+                password: "{{ replication_password }}"
+            parameters:
+              wal_level: replica
+              max_wal_senders: 10
+              max_replication_slots: 10
+          bootstrap:
+            dcs:
+              ttl: 30
+              loop_wait: 10
+              retry_timeout: 10
+            initdb:
+            - encoding: UTF8
+            - data-checksums
+
+    - name: Запуск Patroni
+      systemd:
+        name: patroni
+        state: started
+        enabled: yes

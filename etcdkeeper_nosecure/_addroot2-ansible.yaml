@@ -1,0 +1,34 @@
+---
+- hosts: etcd
+  become: yes
+  tasks:
+    - name: Create user 'root' with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/user/add \
+             -d '{"name": "root", "password": "Rextra"}'
+
+    - name: Create 'root' role with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/role/add \
+             -d '{"name": "root"}'
+
+    - name: Grant 'root' role to 'root' user with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/user/grant \
+             -d '{"user": "root", "role": "root"}'
+
+    - name: Enable authentication in etcd with TLS using curl
+      shell: |
+        curl --cacert /etc/etcd/ssl/ca.crt \
+             --cert /etc/etcd/ssl/server.crt \
+             --key /etc/etcd/ssl/server.key \
+             -X POST https://{{ hostvars[inventory_hostname].ansible_host }}:2379/v3/auth/enable

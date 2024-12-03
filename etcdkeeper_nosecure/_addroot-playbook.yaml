@@ -1,0 +1,77 @@
+- hosts: etcd
+  gather_facts: False
+  become: True
+  tasks:
+    - name: Create user 'root' with TLS
+      uri:
+#        url: "https://{{ hostvars[inventory_hostname].ansible_host}}:2379/v3/auth/user/add"
+        url: "https://127.0.0.1:2379/v3/auth/user/add"
+        method: POST
+        body: |
+          {
+            "name": "root3",
+            "password": "Rextra"
+          }
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        validate_certs: yes
+        # Указание пути к сертификатам
+        client_cert: "/etc/etcd/ssl/server.crt"
+        client_key: "/etc/etcd/ssl/server.key"
+        ca_path: "/etc/etcd/ssl/ca.crt"
+#        client_cert: "/home/dmitry/projects/mpmsystem/etcdkeeper-ansible/artifacts/etcdkeeper.crt"
+#        client_key: "/home/dmitry/projects/mpmsystem/etcdkeeper-ansible/artifacts/etcdkeeper.key"
+#        ca_path: "/home/dmitry/projects/mpmsystem/etcdkeeper-ansible/artifacts/ca.crt"
+
+    - name: Create 'root' role with TLS
+      uri:
+        url: "https://{{ inventory_hostname }}:2379/v3/auth/role/add"
+        method: POST
+        body: |
+          {
+            "name": "root"
+          }
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        validate_certs: yes
+        client_cert: "/etc/etcdkeeper/ssl/server.crt"
+        client_key: "/etc/etcdkeeper/ssl/server.key"
+        ca_cert: "/etc/etcdkeeper/ssl/ca.crt"
+
+    - name: Grant 'root' role to 'root' user with TLS
+      uri:
+        url: "https://{{ inventory_hostname }}:2379/v3/auth/user/grant"
+        method: POST
+        body: |
+          {
+            "user": "root",
+            "role": "root"
+          }
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        validate_certs: yes
+        client_cert: "/etc/etcdkeeper/ssl/server.crt"
+        client_key: "/etc/etcdkeeper/ssl/server.key"
+        ca_cert: "/etc/etcdkeeper/ssl/ca.crt"
+
+    - name: Enable authentication in etcd with TLS
+      uri:
+        url: "https://{{ inventory_hostname }}:2379/v3/auth/enable"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+        validate_certs: yes
+        client_cert: "/etc/etcdkeeper/ssl/server.crt"
+        client_key: "/etc/etcdkeeper/ssl/server.key"
+        ca_cert: "/etc/etcdkeeper/ssl/ca.crt"
+
+
+
+
+
+
+
+

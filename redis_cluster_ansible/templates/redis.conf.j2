@@ -1,0 +1,33 @@
+# Main part
+bind 0.0.0.0
+
+{% if inventory_hostname == "redis_master" %}
+
+port 6379
+requirepass {{ redis_password }}
+masterauth {{ redis_password }}
+protected-mode yes
+
+
+tcp-keepalive 0
+maxmemory 2gb
+maxmemory-policy volatile-lru
+  
+dir {{ redis_dir }}
+
+{% else %}
+
+port 6379
+requirepass {{ redis_password }}
+masterauth {{ redis_password }}
+protected-mode yes
+  
+slaveof {{ hostvars['redis_master'].ansible_host }} 6379
+  
+tcp-keepalive 0
+maxmemory 2gb
+maxmemory-policy volatile-lru
+  
+dir {{ redis_dir }}
+
+{% endif %}

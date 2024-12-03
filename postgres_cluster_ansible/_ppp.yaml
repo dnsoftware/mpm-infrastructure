@@ -1,0 +1,193 @@
+---
+- hosts: postgresql_nodes
+  become: yes
+  vars:
+    postgresql_version: "14"
+    patroni_version: "4.0.2"
+    patroni_config_dir: "/etc/patroni"
+    postgresql_data_dir: "/var/lib/postgresql/{{ postgresql_version }}/data"
+    pgbouncer_listen_port: 6432
+    pgbouncer_listen_addr: "0.0.0.0"
+    pgbouncer_auth_type: "md5"
+    pgbouncer_pool_mode: "transaction"
+#    postgres_user: "postgres"
+#    postgres_password: "mysecurepassword"
+    postgres_db: "mydb"
+    cluster_name: "pg_cluster"
+    node_name: "{{ inventory_hostname }}"
+    patroni_etcd_url: "{{ inventory_hostname }}:2379"
+
+  tasks:
+    # Установка необходимых пакетов
+    - name: Install necessary packages for PostgreSQL, Patroni, and PgBouncer
+      apt:
+        name:
+          - postgresql-{{ postgresql_version }}
+          - postgresql-client-{{ postgresql_version }}
+          - postgresql-contrib-{{ postgresql_version }}
+          - pgbouncer
+          - python3-pip
+          - etcd
+        state: present
+        update_cache: yes
+
+    - name: Установка psycopg>=3.0.0 через pip (альтернатива)
+      pip:
+        name: psycopg
+        version: ">=3.0.0"
+        state: present
+        executable: /usr/bin/pip3  # Укажите путь к вашему pip
+
+    - name: "Delete postgres data dir"
+      file:
+        state: absent
+        path: "{{ postgresql_data_dir }}"
+
+#    # Конфигурация PostgreSQL
+#    - name: Initialize PostgreSQL database
+#      become: yes
+#      become_user: postgres
+#      shell: "/usr/lib/postgresql/{{ postgresql_version }}/bin/initdb -D {{ postgresql_data_dir }}"
+#      args:
+#        creates: "{{ postgresql_data_dir }}/PG_VERSION"
+
+#    - name: Stop service postgresql, if started
+#      ansible.builtin.service:
+#        name: postgresql
+#        state: stopped
+
+    # Установка Patroni
+    - name: Install Patroni
+      pip:
+        name: patroni
+        state: present
+
+    - name: Install Patroni
+      pip:
+        name: python-etcd
+        state: present
+
+    # Конфигурация Patroni
+    - name: Create Patroni configuration directory
+      file:
+        path: "{{ patroni_config_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create Patroni configuration file
+      template:
+        src: patroni2.yml.j2
+        dest: "{{ patroni_config_dir }}/patroni.yml"
+        mode: '0644'
+
+    - name: Создание юнит-файла systemd для Patroni
+      copy:
+        dest: /etc/systemd/system/patroni.service
+        content: |
+          [Unit]
+          Description=Patroni High Availability PostgreSQL
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=postgres
+          ExecStart=/usr/local/bin/patroni /etc/patroni/patroni.yml
+          Restart=always
+          LimitNOFILE=1024
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Перезагрузка systemd для загрузки нового юнит-файла
+      command: systemctl daemon-reload
+
+    - name: Ensure /var/lib/postgresql/.ansible/tmp exists with correct permissions
+      file:
+        path: /var/lib/postgresql/.ansible/tmp
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0700'
+
+#    # Конфигурация PostgreSQL (непосредственно через Patroni)
+#    - name: Initialize PostgreSQL database
+#      become: yes
+#      become_user: postgres
+#      shell: "/usr/lib/postgresql/{{ postgresql_version }}/bin/initdb -D {{ postgresql_data_dir }}"
+#      args:
+#        creates: "{{ postgresql_data_dir }}/PG_VERSION"
+
+#    - name: Изменить параметр listen_addresses в postgresql.conf
+#      lineinfile:
+#        path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+#        regexp: '^#?listen_addresses'
+#        line: "listen_addresses = '*'"
+#        state: present
+#      notify: Перезапустить PostgreSQL
+
+#    - name: Добавить правило в pg_hba.conf для внешних подключений
+#      lineinfile:
+#        path: /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf
+#        line: "host all all 0.0.0.0/0 md5"
+#        state: present
+#      notify: Перезапустить PostgreSQL
+
+#    - name: Убедиться, что порт 5432 открыт в UFW (брандмауэр)
+#      ufw:
+#        rule: allow
+#        port: 5432
+#        proto: tcp
+
+    - name: Start PostgreSQL service
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Enable and start Patroni service
+      systemd:
+        name: patroni
+        enabled: yes
+        state: restarted
+
+
+#    # Конфигурация PgBouncer
+#    - name: Установка PgBouncer
+#      apt:
+#        name: pgbouncer
+#        state: present
+
+#    - name: Настройка PgBouncer
+#      copy:
+#        dest: /etc/pgbouncer/pgbouncer.ini
+#        content: |
+#          [databases]
+#          postgres = host=localhost port=5432
+
+#          [pgbouncer]
+#          listen_addr = 0.0.0.0
+#          listen_port = 6432
+#          auth_type = md5
+#          auth_file = /etc/pgbouncer/userlist.txt
+#          pool_mode = transaction
+#          max_client_conn = 100
+#          default_pool_size = 20
+
+#    - name: Добавление пользователей PgBouncer
+#      copy:
+#        dest: /etc/pgbouncer/userlist.txt
+#        content: |
+#          "postgres" "{{ postgresql_superuser_password }}"
+
+#    - name: Запуск PgBouncer
+#      systemd:
+#        name: pgbouncer
+#        state: started
+#        enabled: yes
+
+
+#  handlers:
+#    - name: Перезапустить PostgreSQL
+#      service:
+#        name: postgresql
+#        state: restarted

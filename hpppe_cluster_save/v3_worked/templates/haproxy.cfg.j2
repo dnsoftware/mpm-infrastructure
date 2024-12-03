@@ -1,0 +1,42 @@
+global
+  log 127.0.0.1 local0
+  maxconn 4096
+  daemon
+
+defaults
+  log global
+  option tcplog
+  retries 3
+  timeout connect 5000ms
+  timeout client 500000ms
+  timeout server 500000ms
+
+frontend pgbouncer_master
+  bind *:6532
+  mode tcp
+  default_backend pgbouncer_master_backend
+
+backend pgbouncer_master_backend
+  mode tcp
+  option httpchk GET /master HTTP/1.1\r\nHost:\ localhost
+  http-check expect status 200
+  default-server inter 1s fall 3 rise 2 on-marked-down shutdown-sessions
+
+{% for host in groups['etcd_nodes'] %}
+  server {{ host }} {{ hostvars[host].ansible_host }}:{{ pgbouncer_listen_port }} maxconn 10000 minconn 10000 check port 8008
+{% endfor %}
+  
+frontend pgbouncer_readonly
+  bind *:6533
+  mode tcp
+  default_backend pgbouncer_replica_backend
+  
+backend pgbouncer_replica_backend
+  mode tcp
+  option httpchk GET /replica HTTP/1.1\r\nHost:\ localhost
+  http-check expect status 200
+  default-server inter 1s fall 3 rise 2 on-marked-down shutdown-sessions
+
+{% for host in groups['etcd_nodes'] %}
+  server {{ host }} {{ hostvars[host].ansible_host }}:{{ pgbouncer_listen_port }} maxconn 10000 minconn 10000 check port 8008
+{% endfor %}

@@ -1,0 +1,20 @@
+---
+- name: Install and configure HAProxy
+  hosts: haproxy
+  become: yes
+  tasks:
+    - name: Install HAProxy
+      apt:
+        name: haproxy
+        state: present
+
+    - name: Configure HAProxy for ClickHouse
+      template:
+        dest: /etc/haproxy/haproxy.cfg
+        src: haproxy.yaml.j2
+        mode: '0644'
+
+    - name: Restart HAProxy service
+      service:
+        name: haproxy
+        state: restarted

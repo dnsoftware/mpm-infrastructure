@@ -1,0 +1,54 @@
+- hosts: redis_nodes
+  become: yes
+  tasks:
+# Redis install
+  - name: Install Redis
+    apt:
+      name: redis-server
+      state: present
+
+  - name: Configure Redis Master/Slave
+    template:
+      src: redis.conf.j2
+      dest: /etc/redis/redis.conf
+
+#  - name: Create Redis data directory
+#    file:
+#      path: "{{ redis_dir }}"
+#      state: directory
+#      mode: '0777'
+#      owner: redis
+#      group: redis
+
+  - name: Ensure Redis is running
+    systemd:
+      name: redis-server
+      state: started
+      enabled: yes
+
+  - name: restart redis
+    systemd:
+      name: redis-server
+      state: restarted
+
+# Redis Sentinel
+  - name: Install Redis Sentinel
+    apt:
+      name: redis-sentinel
+      state: present
+
+  - name: Configure Redis Sentinel
+    template:
+      src: sentinel.conf.j2
+      dest: /etc/redis/sentinel.conf
+
+  - name: Ensure Redis Sentinel is running
+    systemd:
+      name: redis-sentinel
+      state: started
+      enabled: yes
+
+  - name: restart sentinel
+    systemd:
+      name: redis-sentinel
+      state: restarted

@@ -1,0 +1,39 @@
+bind 0.0.0.0
+port 6379
+
+{% if inventory_hostname == "redis_master" %}
+# Настройки для мастера
+requirepass {{ redis_password }}
+
+# Разрешить подключение к Redis без авторизации для реплик
+masterauth {{ redis_password }}
+  
+# Каталог, где будут храниться база данных и файлы AOF
+dir /var/lib/redis
+  
+protected-mode yes
+#appendonly yes
+#appendfsync everysec
+#appendfilename "appendonly.aof"
+  
+# Включить уведомления по pub/sub (например для Sentinel)
+notify-keyspace-events "Ex"
+  
+save 900 1
+save 300 10
+
+{% else %}
+# Настройки для реплики
+
+requirepass {{ redis_password }}
+masterauth {{ redis_password }}
+  
+# Каталог, где будут храниться база данных и файлы AOF
+dir /var/lib/redis
+
+replicaof {{ hostvars['redis_master'].ansible_host }} 6379
+
+{% endif %}
+
+
+

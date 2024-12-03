@@ -1,0 +1,21 @@
+bind 0.0.0.0
+
+# Указываем порт Sentinel
+port 26379
+  
+# Даем имя мастер-ноде, за которой будет следить Sentinel
+sentinel monitor mymaster {{ hostvars['redis_master'].ansible_host }} 6379 2
+#sentinel monitor mymaster 127.0.0.1 6379 2
+  
+# Указываем пароль для подключения к Redis Master
+sentinel auth-pass mymaster {{ redis_password }}
+  
+# Задаем интервал проверки мастера
+sentinel down-after-milliseconds mymaster 5000
+  
+# Указываем интервал ожидания перед переключением на новый мастер
+sentinel failover-timeout mymaster 10000
+  
+# Указываем, сколько реплик должно быть обновлено
+sentinel parallel-syncs mymaster 1
+

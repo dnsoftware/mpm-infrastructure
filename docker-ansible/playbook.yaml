@@ -1,0 +1,55 @@
+---
+- name: Установка Docker и Docker Compose
+  hosts: docker
+  become: True
+  tasks:
+    - name: Установка зависимостей
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+      when: ansible_os_family == "Debian"
+
+    - name: Добавление Docker GPG ключа
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Добавление Docker репозитория
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Обновление кеша apt
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Установка Docker
+      apt:
+        name: docker-ce
+        state: latest
+      when: ansible_os_family == "Debian"
+
+    - name: Установка pip для Python (для установки Docker Compose)
+      apt:
+        name: python3-pip
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Установка Docker Compose
+      pip:
+        name: docker-compose
+        state: latest
+
+    - name: Убедиться, что Docker работает
+      service:
+        name: docker
+        state: started
+        enabled: true

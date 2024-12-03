@@ -1,0 +1,14 @@
+<yandex>
+  <remote_servers>
+    <my_cluster>
+      <shard>
+{% for host in groups['clickhouse_nodes'] %}
+        <replica>
+          <host>{{ hostvars[host].ansible_host }}</host>
+          <port>9000</port>
+        </replica>
+{% endfor %}
+      </shard>
+    </my_cluster>
+  </remote_servers>
+</yandex>

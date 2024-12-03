@@ -1,0 +1,175 @@
+---
+- hosts: postgresql_nodes
+  become: yes
+  vars:
+    postgresql_version: "14"
+    patroni_config_dir: "/etc/patroni"
+    postgresql_data_dir: "/var/lib/postgresql/{{ postgresql_version }}/data"
+    pgbouncer_listen_port: 6432
+    pgbouncer_listen_addr: "0.0.0.0"
+    pgbouncer_auth_type: "md5"
+    pgbouncer_pool_mode: "session"
+    cluster_name: "pg_cluster"
+    node_name: "{{ inventory_hostname }}"
+    patroni_etcd_url: "{{ inventory_hostname }}:2379"
+
+  tasks:
+    # Установка необходимых пакетов
+    - name: Install necessary packages for PostgreSQL, Patroni, and PgBouncer
+      apt:
+        name:
+          - postgresql-{{ postgresql_version }}
+          - postgresql-client-{{ postgresql_version }}
+          - postgresql-contrib-{{ postgresql_version }}
+          - pgbouncer
+          - python3-pip
+          - etcd
+        state: present
+        update_cache: yes
+
+    - name: Установка psycopg>=3.0.0 через pip (альтернатива)
+      pip:
+        name: psycopg
+        version: ">=3.0.0"
+        state: present
+        executable: /usr/bin/pip3  # Укажите путь к вашему pip
+
+    # Установка Patroni
+    - name: Install Patroni
+      pip:
+        name: patroni[etcd3]
+        state: present
+
+    - name: Install python-etcd
+      pip:
+        name: python-etcd
+        state: present
+
+    # Конфигурация Patroni
+    - name: Create Patroni configuration directory
+      file:
+        path: "{{ patroni_config_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create Patroni configuration file
+      template:
+        src: patroni.yml.j2
+        dest: "{{ patroni_config_dir }}/patroni.yml"
+        mode: '0644'
+
+    - name: Создание юнит-файла systemd для Patroni
+      copy:
+        dest: /etc/systemd/system/patroni.service
+        content: |
+          [Unit]
+          Description=Patroni High Availability PostgreSQL
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=postgres
+          ExecStart=/usr/local/bin/patroni /etc/patroni/patroni.yml
+          Restart=always
+          LimitNOFILE=1024
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Перезагрузка systemd для загрузки нового юнит-файла
+      command: systemctl daemon-reload
+
+    - name: Ensure /var/lib/postgresql/.ansible/tmp exists with correct permissions
+      file:
+        path: /var/lib/postgresql/.ansible/tmp
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: '0755'
+
+    - name: Stop PostgreSQL service
+      systemd:
+        name: postgresql
+        state: stopped
+        enabled: yes
+
+    - name: Enable and start Patroni service
+      systemd:
+        name: patroni
+        enabled: yes
+        state: restarted
+
+
+    # Конфигурация PgBouncer
+    - name: Установка PgBouncer
+      apt:
+        name: pgbouncer
+        state: present
+
+    - name: Настройка PgBouncer
+      copy:
+        dest: /etc/pgbouncer/pgbouncer.ini
+        content: |
+          [databases]
+          * = host=localhost port=5432
+
+          [pgbouncer]
+          listen_addr = {{ pgbouncer_listen_addr }}
+          listen_port = {{ pgbouncer_listen_port }}
+          auth_type = {{ pgbouncer_auth_type }}
+          auth_file = /etc/pgbouncer/userlist.txt
+          pool_mode = {{ pgbouncer_pool_mode }}
+          max_client_conn = 1000
+          default_pool_size = 20
+
+    - name: Добавление пользователей PgBouncer
+      copy:
+        dest: /etc/pgbouncer/userlist.txt
+        content: |
+          "postgres" "{{ postgresql_superuser_password }}"
+    #           "postgres" "md5{{ postgresql_superuser_password | password_hash('md5') }}"
+
+    - name: Configure systemd service for PgBouncer
+      copy:
+        content: |
+          [Unit]
+          Description=PgBouncer
+          After=network.target
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/sbin/pgbouncer /etc/pgbouncer/pgbouncer.ini
+          User=postgres
+          Group=postgres
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+
+        dest: /etc/systemd/system/pgbouncer.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    #    - name: Запуск PgBouncer
+    #      systemd:
+    #        name: pgbouncer
+    #        state: started
+    #        enabled: yes
+
+    - name: Запуск PgBouncer
+      systemd:
+        name: pgbouncer
+        enabled: yes
+        state: restarted
+
+
+#  handlers:
+#    - name: Перезапустить PostgreSQL
+#      service:
+#        name: postgresql
+#        state: restarted

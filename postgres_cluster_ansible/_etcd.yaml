@@ -1,0 +1,25 @@
+---
+- hosts: etcd_nodes
+  become: yes
+  tasks:
+    - name: Установка etcd
+      apt:
+        name: etcd
+        state: present
+
+    - name: Настройка конфигурации etcd
+      copy:
+        dest: /etc/etcd/etcd.conf.yaml
+        content: |
+          name: "{{ inventory_hostname }}"
+          initial-advertise-peer-urls: 'http://{{ ansible_host }}:2380'
+          listen-peer-urls: 'http://0.0.0.0:2380'
+          listen-client-urls: 'http://0.0.0.0:2379'
+          advertise-client-urls: 'http://{{ ansible_host }}:2379'
+          initial-cluster: "{{ etcd_initial_cluster }}"
+
+    - name: Запуск и включение etcd
+      systemd:
+        name: etcd
+        state: started
+        enabled: yes

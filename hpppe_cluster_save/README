@@ -1,0 +1,7 @@
+Версия с etcd + patroni + postgresql + tls
+
+h - haproxy
+p - pgbouncer
+p - patroni
+p - postgresql
+e - etcd
