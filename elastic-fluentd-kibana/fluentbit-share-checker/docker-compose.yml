@@ -1,0 +1,29 @@
+services:
+
+  fluent-bit:
+    image: fluent/fluent-bit:3.1.10
+    container_name: fluent-bit-share-checker
+    volumes:
+      - ./fluentconf/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - /home/dmitry/go/src/gopool3/global.log:/tmp/logs/global.log
+
+#  command: >
+#    /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
+
+#    ports:
+#      - "2020:2020"  # Мониторинг Fluent Bit (опционально)
+#      - "24224:24224"  # Fluent Bit input TCP (опционально)
+#    environment:
+#      - FLB_LOG_LEVEL=info  # Уровень логирования Fluent Bit
+
+    networks:
+      kafka-net:
+        ipv4_address: 192.168.100.21
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  kafka-net:
+    external: true  # Указывает, что эта сеть уже существует и создается вручную
+

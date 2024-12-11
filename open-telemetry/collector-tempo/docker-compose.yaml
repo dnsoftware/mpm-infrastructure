@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector-1
+    ports:
+      - "4317:4317"   # gRPC
+      - "4318:4318"   # HTTP
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config", "/etc/otel-collector-config.yaml"]
+
+  grafana-tempo:
+    image: grafana/tempo:latest
+    privileged: true
+    container_name: grafana-tempo-1
+    ports:
+      - "3100:3100"   # HTTP API
+      - "4327:4327"   # gRPC для получения трассировок
+      - "4328:4328"   # gRPC для получения трассировок
+    volumes:
+      - ./tempo.yaml:/etc/tempo/tempo.yaml
+      - ./data/tempo:/var/tempo
+#      - ./data/tempo/wal:/var/tempo/wal
+    command: ["--config.file=/etc/tempo/tempo.yaml"]
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-1
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+

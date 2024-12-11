@@ -1,0 +1,6 @@
+- pipeline.id: pipeline1
+  path.config: "/usr/share/logstash/pipeline/poolalph.conf"
+
+# не работает, не смог установить библиотеки для logstash
+#- pipeline.id: pipeline2
+#  path.config: "/usr/share/logstash/pipeline/pool-alph-metrics.conf"

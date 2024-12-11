@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    ports:
+      - "3100:3100" # Порт для чтения (query) и Ingest API
+      - "4327:4327"   # gRPC для получения трассировок
+      - "4328:4328"   # gRPC для получения трассировок
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo/tempo-config.yaml
+      - ./overrides.yaml:/etc/tempo/overrides.yaml
+      - ./data/tempo:/var/tempo
+    command:
+      - "--config.file=/etc/tempo/tempo-config.yaml"
+    restart: always
+    networks:
+      - my-shared-network
+
+networks:
+  my-shared-network:
+    external: true  # Указывает, что эта сеть уже существует и создается вручную

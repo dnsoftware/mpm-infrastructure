@@ -1,0 +1,56 @@
+extensions:
+  file_storage:
+    directory: /opt/otel-storage
+
+receivers:
+  otlp:
+    protocols:
+      grpc: # OTLP gRPC работает на порту 4317 (строку ниже можно убрать)
+        endpoint: "0.0.0.0:4317"
+      http: # OTLP HTTP работает на порту 4318 (строку ниже можно убрать)
+        endpoint: "0.0.0.0:4318"
+  jaeger:
+    protocols:
+      grpc:
+      thrift_binary:
+      thrift_compact:
+      thrift_http:
+
+processors:
+  batch:
+    timeout: 1s # Группирует данные для уменьшения нагрузки
+  memory_limiter: # Ограничивает использование памяти Collector
+    limit_mib: 1024
+    spike_limit_mib: 256
+    check_interval: 1s
+  attributes: # Добавляет или изменяет атрибуты, например, задаёт общее имя службы
+    actions:
+      - key: "service.name"
+        action: insert
+        value: "central-gateway"
+
+
+exporters:
+  otlp: # Отправляет данные в конечный бэкенд (например, Grafana Tempo, Jaeger)
+    endpoint: "tempo:4327"
+    tls:
+      insecure: true
+  prometheus:
+    endpoint: "0.0.0.0:9090"
+  debug: {}
+
+service: # Создаёт два конвейера: один для трассировок, другой для метрик
+  extensions: [file_storage]
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger]
+      processors: [memory_limiter, batch, attributes]
+      exporters: [otlp, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+
+#  telemetry:
+#    logs:
+#      level: debug  # Уровень логов: debug, info, warn, error

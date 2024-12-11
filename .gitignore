@@ -1,3 +1,11 @@
 /prometheus-grafana/data/grafana/
 /prometheus-grafana/data/prometheus/
 **/.idea/
+/open-telemetry/collector-tempo/data/
+/observability/data/grafana/
+/observability/data/prometheus/
+/observability-kafka-cluster/data/grafana/
+/observability-kafka-cluster/data/prometheus/
+/observability-kafka-cluster/data/tempo/
+/observability-kafka-cluster/esdata/*
+/open-telemetry/grafana-tempo/data/tempo/*

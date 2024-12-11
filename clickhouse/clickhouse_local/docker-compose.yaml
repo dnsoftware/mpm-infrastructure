@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.11
+    container_name: clickhouse-server
+    ports:
+      - "8123:8123" # HTTP интерфейс ClickHouse
+      - "9001:9001" # TCP интерфейс ClickHouse
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse # Данные ClickHouse
+      - clickhouse_config:/etc/clickhouse-server # Конфигурация ClickHouse
+    restart: always
+
+volumes:
+  clickhouse_data:
+  clickhouse_config:

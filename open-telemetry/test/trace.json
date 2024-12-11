@@ -1,0 +1,38 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": { "stringValue": "example-service" }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "example-tracer",
+            "version": "1.0"
+          },
+          "spans": [
+            {
+              "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+              "spanId": "00f067aa0ba902b7",
+              "name": "example-span",
+              "kind": "SPAN_KIND_CLIENT",
+              "startTimeUnixNano": 1631547000000000,
+              "endTimeUnixNano": 1631547001000000,
+              "attributes": [
+                {
+                  "key": "http.method",
+                  "value": { "stringValue": "GET" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,223 @@
+version: '3.9'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: always
+    networks:
+      kafka-net:
+        ipv4_address: 192.168.100.10
+
+  kafka1:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka1
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://192.168.100.11:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.100.11:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    depends_on:
+      - zookeeper
+    restart: always
+    networks:
+      kafka-net:
+        ipv4_address: 192.168.100.11
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka2
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://192.168.100.12:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.100.12:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    depends_on:
+      - zookeeper
+    restart: always
+    networks:
+      kafka-net:
+        ipv4_address: 192.168.100.12
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka3
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://192.168.100.13:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.100.13:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+    depends_on:
+      - zookeeper
+    restart: always
+    networks:
+      kafka-net:
+        ipv4_address: 192.168.100.13
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-cluster-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 192.168.100.11:9092,192.168.100.12:9093,192.168.100.13:9094
+      KAFKA_CLUSTERS_0_ZOOKEEPER: 192.168.100.10:2181
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    restart: always
+    networks:
+      kafka-net:
+        ipv4_address: 192.168.100.20
+
+  logstash:
+    build:
+      context: ./logstash  # Путь к папке, где находится Dockerfile
+      dockerfile: Dockerfile  # Имя Dockerfile, если оно отличается от стандартного
+    container_name: logstash-kafka
+    volumes:
+      - ./pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
+      - ./pipeline/:/usr/share/logstash/pipeline/:ro
+    ports:
+      - "5044:5044"  # Beats input
+      - "9600:9600"  # Logstash monitoring API
+    environment:
+      - LS_JAVA_OPTS=-Xms512m -Xmx512m
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "kafka3:192.168.100.13"
+      - "kafka2:192.168.100.12"
+      - "kafka1:192.168.100.11"
+
+    restart: always
+    networks:
+      kafka-net:
+        ipv4_address: 192.168.100.30
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1  # Official image with specific version
+    container_name: elasticsearch
+
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g" # Настройка памяти для Elasticsearch
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - network.host=0.0.0.0
+    ports:
+      - "9200:9200"
+
+    restart: always
+    volumes:
+      - ./esdata:/usr/share/elasticsearch/data  # Mounts a volume named "esdata" to persist data
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    networks:
+      elastic-net:
+      kafka-net:
+        ipv4_address: 192.168.100.40
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1  # Official Kibana image with specific version
+    container_name: kibana
+    ports:
+      - "5601:5601"
+
+    depends_on:
+      - elasticsearch
+    restart: always
+
+    networks:
+      - elastic-net
+
+#    networks:
+#      kafka-net:
+#        ipv4_address: 192.168.100.41
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    ports:
+      - "4317:4317"   # gRPC
+      - "4318:4318"   # HTTP
+    restart: always
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config", "/etc/otel-collector-config.yaml"]
+
+  grafana-tempo:
+    image: grafana/tempo:latest
+    #privileged: true
+    container_name: grafana-tempo
+    ports:
+      - "3100:3100"   # HTTP API
+      - "4327:4327"   # gRPC для получения трассировок
+      - "4328:4328"   # gRPC для получения трассировок
+    volumes:
+      - ./tempo.yaml:/etc/tempo/tempo.yaml
+      - ./data/tempo:/var/tempo
+    #      - ./data/tempo/wal:/var/tempo/wal
+    command: ["--config.file=/etc/tempo/tempo.yaml"]
+    restart: always
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+
+
+volumes:
+  esdata:  # Creates a volume named "esdata" for persistent data storage
+
+
+networks:
+  kafka-net:
+    external: true  # Указывает, что эта сеть уже существует и создается вручную (см. скрипт create_network.sh)
+  elastic-net:
+    driver: bridge

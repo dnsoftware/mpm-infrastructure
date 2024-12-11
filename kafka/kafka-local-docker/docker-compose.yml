@@ -48,7 +48,6 @@ services:
     ports:
       - "5044:5044"  # Beats input
       - "9600:9600"  # Logstash monitoring API
-      - "9304:9304"  # публикация метрик
     environment:
       - LS_JAVA_OPTS=-Xms512m -Xmx512m
 

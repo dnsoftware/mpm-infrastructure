@@ -1,0 +1,19 @@
+server:
+  http_listen_port: 3100
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: grafana-tempo:4327
+        http:
+          endpoint: grafana-tempo:4328
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: ./var/tempo/data
+    wal:
+      path: ./var/tempo/wal
