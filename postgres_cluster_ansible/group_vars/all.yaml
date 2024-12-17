@@ -13,7 +13,10 @@ replication_password: "replpassword"
 etcd_username: "root"
 etcd_password: "etcdpassword"
 
+# название базы с которой работаем, пользователь этой базы и пароль
+pool_db_name: "mpmpool"
+pool_db_user: "mpmpool"
+pool_user_pass: "mpmpoolpass"
 
-
-#etcd_initial_cluster: "node1=http://31.128.39.18:2380,node2=http://31.129.98.136:2380,node3=http://45.147.179.134:2380"
-#etcd_cluster: "http://31.128.39.18:2379,http://31.129.98.136:2379,http://45.147.179.134:2379"
+#etcd_initial_cluster: "node1=http://62.113.106.101:2380,node2=http://31.129.106.65:2380,node3=http://31.128.36.206:2380"
+#etcd_cluster: "http://62.113.106.101:2379,http://31.129.106.65:2379,http://31.128.36.206:2379"

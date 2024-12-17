@@ -115,7 +115,8 @@
         dest: /etc/pgbouncer/userlist.txt
         content: |
           "postgres" "{{ postgresql_superuser_password }}"
-    #           "postgres" "md5{{ postgresql_superuser_password | password_hash('md5') }}"
+          "{{ pool_db_name }}" "{{ pool_user_pass }}"
+        #  "postgres" "md5{{ postgresql_superuser_password | password_hash('md5') }}"
 
     - name: Configure systemd service for PgBouncer
       copy:

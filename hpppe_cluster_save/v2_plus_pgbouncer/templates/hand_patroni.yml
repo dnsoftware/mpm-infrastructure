@@ -4,13 +4,13 @@ scope: edir_cluster
 
 restapi:
     listen: 0.0.0.0:8008
-    connect_address: 31.128.39.18:8008
+    connect_address: 62.113.106.101:8008
     authentication:
         username: patroni
         password: patroni
 
 etcd3:
-    hosts: 31.128.39.18:2379,31.129.98.136:2379,45.147.179.134:2379
+    hosts: 62.113.106.101:2379,31.129.106.65:2379,31.128.36.206:2379
 #    username: root
 #    password: bVeSXiUx
 
@@ -39,9 +39,9 @@ bootstrap:
     pg_hba:
     - host replication postgres ::1/128 md5
     - host replication postgres 127.0.0.1/8 md5
-    - host replication postgres 31.128.39.18/24 md5
-    - host replication postgres 31.129.98.136/24 md5
-    - host replication postgres 45.147.179.134/24 md5
+    - host replication postgres 62.113.106.101/24 md5
+    - host replication postgres 31.129.106.65/24 md5
+    - host replication postgres 31.128.36.206/24 md5
     - host all all 0.0.0.0/0 md5
 #    - host replication replicator samenet md5
     - host replication all 127.0.0.1/32 md5
@@ -54,7 +54,7 @@ bootstrap:
 
 postgresql:
     listen: 0.0.0.0:5432
-    connect_address: 31.128.39.18:5432
+    connect_address: 62.113.106.101:5432
     #conf_dir: /etc/postgresql/11.9/main
     bin_dir: /usr/lib/postgresql/14/bin
     data_dir: /var/lib/postgresql/14/data

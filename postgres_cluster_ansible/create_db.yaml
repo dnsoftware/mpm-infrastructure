@@ -1,0 +1,68 @@
+---
+- hosts: haproxy_main
+  become: yes
+  vars:
+    login_port: 6532
+    db_name: "{{ pool_db_name }}"
+    db_user: "{{ pool_db_user }}"
+    db_user_pass: "{{ pool_user_pass }}"
+    db_admin_user: "postgres"  # Админ PostgreSQL для подключения
+    db_admin_pass: "{{ postgresql_superuser_password }}"  # Пароль для администратора базы данных
+  tasks:
+    - name: Install packages
+      when: ansible_distribution == 'Ubuntu'
+      become: yes
+      apt:
+        name:
+          - python3-pip
+          - python3-dev
+          - python3-venv
+          - python3-psycopg2
+        state: present
+
+    - name: Create PostgreSQL user
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"                # Имя пользователя
+        password: "{{ db_user_pass }}"        # Пароль пользователя
+        state: present               # Убедитесь, что пользователь существует
+        login_host: "{{ ansible_host }}"        # Хост для подключения
+        login_port: "{{ login_port }}"             # Порт для подключения (по умолчанию 5432)
+        login_user: "{{ db_admin_user }}"         # Имя пользователя для подключения к PostgreSQL
+        login_password: "{{ db_admin_pass }}"  # Пароль для подключения к PostgreSQL
+      become_user: postgres          # Команда будет выполнена от имени пользователя postgres
+
+    - name: Create PostgreSQL database
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        login_host: "{{ ansible_host }}"
+        login_port: "{{ login_port }}"
+        login_user: "{{ db_admin_user }}"
+        login_password: "{{ db_admin_pass }}"
+        encoding: UTF8
+        state: present
+
+      become_user: postgres
+
+    - name: Grant privileges to PostgreSQL user
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"
+        db: "{{ db_name }}"
+        priv: "ALL"
+        login_host: "{{ ansible_host }}"
+        login_port: "{{ login_port }}"
+        login_user: "{{ db_admin_user }}"
+        login_password: "{{ db_admin_pass }}"
+        state: present
+      become_user: postgres
+
+    - name: Grant CONNECT privilege on database
+      community.postgresql.postgresql_query:
+        db: "{{ db_name }}"              # Имя базы данных
+        query: "GRANT CONNECT ON DATABASE {{ db_name }} TO {{ db_user }};"  # SQL-запрос для предоставления права CONNECT
+        login_host: "{{ ansible_host }}"        # Хост для подключения
+        login_port: "{{ login_port }}"             # Порт для подключения
+        login_user: "{{ db_admin_user }}"         # Имя пользователя для подключения к PostgreSQL
+        login_password: "{{ db_admin_pass }}"  # Пароль для подключения к PostgreSQL
+      become_user: postgres          # Команда будет выполнена от имени пользователя postgres
+
