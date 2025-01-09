@@ -1,0 +1,69 @@
+<yandex>
+    <users_config>/etc/clickhouse-server/users.xml</users_config>
+
+    <!-- Путь для хранения данных -->
+    <path>/var/lib/clickhouse/</path>
+
+    <!-- Путь для временных файлов -->
+    <tmp_path>/var/lib/clickhouse/tmp/</tmp_path>
+
+    <!-- Путь для файлов с пользовательскими загрузками -->
+    <user_files_path>/var/lib/clickhouse/user_files/</user_files_path>
+
+    <!-- Путь для схем форматов -->
+    <format_schema_path>/var/lib/clickhouse/format_schemas/</format_schema_path>
+
+    <!-- Путь для логов -->
+    <logger>
+        <log>/var/log/clickhouse-server/clickhouse.log</log>
+        <errorlog>/var/log/clickhouse-server/clickhouse_error.log</errorlog>
+        <size>1000M</size>
+    </logger>
+
+    <!-- Сетевые настройки -->
+    <listen_host>0.0.0.0</listen_host>
+    <tcp_port>9000</tcp_port>
+    <http_port>8123</http_port>
+
+    <!-- Настройки ZooKeeper -->
+    <zookeeper>
+        <node>
+            <host>zookeeper1</host>
+            <port>3181</port>
+        </node>
+        <node>
+            <host>zookeeper2</host>
+            <port>3182</port>
+        </node>
+        <node>
+            <host>zookeeper3</host>
+            <port>3183</port>
+        </node>
+    </zookeeper>
+
+    <!-- Настройки кластера -->
+    <remote_servers>
+        <clickhouse_cluster>
+            <shard>
+                <replica>
+                    <host>clickhouse1</host>
+                    <port>9000</port>
+                </replica>
+                <replica>
+                    <host>clickhouse2</host>
+                    <port>9000</port>
+                </replica>
+                <replica>
+                    <host>clickhouse3</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </clickhouse_cluster>
+    </remote_servers>
+
+    <!-- Настройки репликации -->
+    <macros>
+        <replica>clickhouse1</replica> <!-- Меняйте имя для каждой ноды -->
+        <shard>shard1</shard>
+    </macros>
+</yandex>

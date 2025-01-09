@@ -4,7 +4,7 @@
 
  - ставим HAproxy: ansible-playbook haproxy.yaml
  - ставим кластер Postgresql+pgbouncer+patroni: ansible-playbook ppp.yaml
- - заводим нужного пользователя, БД, даем права: ansible-playbook create_database.yaml
+ - заводим нужного пользователя, БД, даем права: ansible-playbook create_db.yaml
  - в плейбуке ppp.yaml не забыть прописать нужных пользователей для работы с базой, смотри таск “Добавление пользователей PgBouncer”, это прям важно, иначе не будет работать.
 
 ----

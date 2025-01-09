@@ -109,6 +109,7 @@
           pool_mode = {{ pgbouncer_pool_mode }}
           max_client_conn = 1000
           default_pool_size = 20
+          ignore_startup_parameters = extra_float_digits
 
     - name: Добавление пользователей PgBouncer
       copy:

@@ -1,0 +1,42 @@
+<yandex>
+    <!-- Пользователи -->
+    <users>
+        <default>
+            <no_password/>
+            <!-- Права доступа -->
+            <networks>
+                <ip>::/0</ip> <!-- Разрешить доступ со всех адресов -->
+            </networks>
+            <!-- Параметры пользователя -->
+            <profile>default</profile>
+            <quota>default</quota>
+        </default>
+        <mpmhouse>
+            <password>mpmhouse</password>
+            <networks>
+                <ip>::/0</ip> <!-- Разрешить доступ с любых IP -->
+            </networks>
+            <profile>default</profile>
+            <quota>default</quota>
+        </mpmhouse>
+    </users>
+
+    <!-- Профили ресурсов -->
+    <profiles>
+        <default>
+            <max_memory_usage>10000000000</max_memory_usage>
+            <use_uncompressed_cache>1</use_uncompressed_cache>
+        </default>
+    </profiles>
+
+    <!-- Ограничения на использование -->
+    <quotas>
+        <default>
+            <interval>
+                <duration>3600</duration>
+                <queries>0</queries>
+                <errors>0</errors>
+            </interval>
+        </default>
+    </quotas>
+</yandex>

@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # ZooKeeper nodes
+  zookeeper1:
+    image: zookeeper:3.8
+    container_name: zookeeper1
+    environment:
+      ZOOKEEPER_ID: 1
+      ZOOKEEPER_SERVERS: "zookeeper1:2888:3888,zookeeper2:2888:3888,zookeeper3:2888:3888"
+    ports:
+      - "3181:2181"
+      - "2888:2888"
+      - "3888:3888"
+    networks:
+      - clickhouse_network
+    volumes:
+      - ./zookeeper/zookeeper1/data:/data
+      - ./zookeeper/zookeeper1/datalog:/datalog
+
+  zookeeper2:
+    image: zookeeper:3.8
+    container_name: zookeeper2
+    environment:
+      ZOOKEEPER_ID: 2
+      ZOOKEEPER_SERVERS: "zookeeper1:2888:3888,zookeeper2:2888:3888,zookeeper3:2888:3888"
+    ports:
+      - "3182:2181"
+      - "2889:2888"
+      - "3889:3888"
+    networks:
+      - clickhouse_network
+    volumes:
+      - ./zookeeper/zookeeper2/data:/data
+      - ./zookeeper/zookeeper2/datalog:/datalog
+
+  zookeeper3:
+    image: zookeeper:3.8
+    container_name: zookeeper3
+    environment:
+      ZOOKEEPER_ID: 3
+      ZOOKEEPER_SERVERS: "zookeeper1:2888:3888,zookeeper2:2888:3888,zookeeper3:2888:3888"
+    ports:
+      - "3183:2181"
+      - "2890:2888"
+      - "3890:3888"
+    networks:
+      - clickhouse_network
+    volumes:
+      - ./zookeeper/zookeeper3/data:/data
+      - ./zookeeper/zookeeper3/datalog:/datalog
+
+  # ClickHouse nodes
+  clickhouse1:
+    image: clickhouse/clickhouse-server:23.9
+    container_name: clickhouse1
+    environment:
+      - CLICKHOUSE_DB=default
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    networks:
+      - clickhouse_network
+    volumes:
+      - ./clickhouse/clickhouse1/data:/var/lib/clickhouse
+      - ./clickhouse/clickhouse1/config:/etc/clickhouse-server
+      - ./clickhouse/clickhouse1/logs:/var/log/clickhouse-server
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+
+  clickhouse2:
+    image: clickhouse/clickhouse-server:23.9
+    container_name: clickhouse2
+    environment:
+      - CLICKHOUSE_DB=default
+    ports:
+      - "8124:8123"
+      - "9001:9000"
+    networks:
+      - clickhouse_network
+    volumes:
+      - ./clickhouse/clickhouse2/data:/var/lib/clickhouse
+      - ./clickhouse/clickhouse2/config:/etc/clickhouse-server
+      - ./clickhouse/clickhouse2/logs:/var/log/clickhouse-server
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+
+  clickhouse3:
+    image: clickhouse/clickhouse-server:23.9
+    container_name: clickhouse3
+    environment:
+      - CLICKHOUSE_DB=default
+    ports:
+      - "8125:8123"
+      - "9002:9000"
+    networks:
+      - clickhouse_network
+    volumes:
+      - ./clickhouse/clickhouse3/data:/var/lib/clickhouse
+      - ./clickhouse/clickhouse3/config:/etc/clickhouse-server
+      - ./clickhouse/clickhouse3/logs:/var/log/clickhouse-server
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+
+networks:
+  clickhouse_network:
+    driver: bridge
