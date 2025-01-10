@@ -23,3 +23,6 @@
 **/zookeeper2/datalog/*
 **/zookeeper3/data/*
 **/zookeeper3/datalog/*
+/kafka/kafka-local-docker/confluentinc-kafka-connect-elasticsearch-14.1.2/
+/kafka/kafka-local-docker/plugins/
+/Настройки/
