@@ -26,3 +26,4 @@
 /kafka/kafka-local-docker/confluentinc-kafka-connect-elasticsearch-14.1.2/
 /kafka/kafka-local-docker/plugins/
 /Настройки/
+/gitlab_tests/vault.sh
