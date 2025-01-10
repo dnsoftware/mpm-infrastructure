@@ -56,7 +56,6 @@ services:
   # ClickHouse nodes
   clickhouse1:
     image: clickhouse/clickhouse-server:23.9
-#    container_name: clickhouse1
     environment:
       - CLICKHOUSE_DB=default
     ports:
@@ -68,7 +67,6 @@ services:
       - ./clickhouse/clickhouse1/data:/var/lib/clickhouse
       - ./clickhouse/clickhouse1/config:/etc/clickhouse-server
       - ./clickhouse/clickhouse1/logs:/var/log/clickhouse-server
-      #- ./clickhouse/clickhouse1/config/clusters.xml:/etc/clickhouse-server/clusters.xml
     depends_on:
       - zookeeper1
       - zookeeper2
@@ -76,7 +74,6 @@ services:
 
   clickhouse2:
     image: clickhouse/clickhouse-server:23.9
-#    container_name: clickhouse2
     environment:
       - CLICKHOUSE_DB=default
     ports:
@@ -88,7 +85,6 @@ services:
       - ./clickhouse/clickhouse2/data:/var/lib/clickhouse
       - ./clickhouse/clickhouse2/config:/etc/clickhouse-server
       - ./clickhouse/clickhouse2/logs:/var/log/clickhouse-server
-      #- ./clickhouse/clickhouse2/config/clusters.xml:/etc/clickhouse-server/clusters.xml
     depends_on:
       - zookeeper1
       - zookeeper2
@@ -96,7 +92,6 @@ services:
 
   clickhouse3:
     image: clickhouse/clickhouse-server:23.9
-#    container_name: clickhouse3
     environment:
       - CLICKHOUSE_DB=default
     ports:
@@ -108,7 +103,6 @@ services:
       - ./clickhouse/clickhouse3/data:/var/lib/clickhouse
       - ./clickhouse/clickhouse3/config:/etc/clickhouse-server
       - ./clickhouse/clickhouse3/logs:/var/log/clickhouse-server
-      #- ./clickhouse/clickhouse3/config/clusters.xml:/etc/clickhouse-server/clusters.xml
     depends_on:
       - zookeeper1
       - zookeeper2
