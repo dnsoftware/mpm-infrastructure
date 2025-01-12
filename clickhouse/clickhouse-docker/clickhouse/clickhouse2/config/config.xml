@@ -42,25 +42,25 @@
         </node>
     </zookeeper>
 
-<!--    <clusters>-->
-<!--        <cluster name="clickhouse_cluster">-->
-<!--            &lt;!&ndash; Первый шард с репликами на 3 узлах &ndash;&gt;-->
-<!--            <shard>-->
-<!--                <replica>-->
-<!--                    <host>clickhouse1</host>-->
-<!--                    <port>9000</port>-->
-<!--                </replica>-->
-<!--                <replica>-->
-<!--                    <host>clickhouse2</host>-->
-<!--                    <port>9000</port>-->
-<!--                </replica>-->
-<!--                <replica>-->
-<!--                    <host>clickhouse3</host>-->
-<!--                    <port>9000</port>-->
-<!--                </replica>-->
-<!--            </shard>-->
-<!--        </cluster>-->
-<!--    </clusters>-->
+    <clusters>
+        <cluster name="clickhouse_cluster">
+            <!-- Первый шард с репликами на 3 узлах -->
+            <shard>
+                <replica>
+                    <host>clickhouse1</host>
+                    <port>9000</port>
+                </replica>
+                <replica>
+                    <host>clickhouse2</host>
+                    <port>9000</port>
+                </replica>
+                <replica>
+                    <host>clickhouse3</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </cluster>
+    </clusters>
 
     <!-- Настройки кластера -->
     <remote_servers>
