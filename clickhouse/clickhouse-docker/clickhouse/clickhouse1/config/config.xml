@@ -24,6 +24,7 @@
     <listen_host>0.0.0.0</listen_host>
     <tcp_port>9000</tcp_port>
     <http_port>8123</http_port>
+    <interserver_http_port>9009</interserver_http_port>
 
     <!-- Настройки ZooKeeper -->
     <zookeeper>
@@ -41,25 +42,25 @@
         </node>
     </zookeeper>
 
-    <clusters>
-        <cluster name="clickhouse_cluster">
-            <!-- Первый шард с репликами на 3 узлах -->
-            <shard>
-                <replica>
-                    <host>clickhouse1</host>
-                    <port>9000</port>
-                </replica>
-                <replica>
-                    <host>clickhouse2</host>
-                    <port>9000</port>
-                </replica>
-                <replica>
-                    <host>clickhouse3</host>
-                    <port>9000</port>
-                </replica>
-            </shard>
-        </cluster>
-    </clusters>
+<!--    <clusters>-->
+<!--        <cluster name="clickhouse_cluster">-->
+<!--            &lt;!&ndash; Первый шард с репликами на 3 узлах &ndash;&gt;-->
+<!--            <shard>-->
+<!--                <replica>-->
+<!--                    <host>clickhouse1</host>-->
+<!--                    <port>9000</port>-->
+<!--                </replica>-->
+<!--                <replica>-->
+<!--                    <host>clickhouse2</host>-->
+<!--                    <port>9000</port>-->
+<!--                </replica>-->
+<!--                <replica>-->
+<!--                    <host>clickhouse3</host>-->
+<!--                    <port>9000</port>-->
+<!--                </replica>-->
+<!--            </shard>-->
+<!--        </cluster>-->
+<!--    </clusters>-->
 
     <!-- Настройки кластера -->
     <remote_servers>
@@ -83,6 +84,7 @@
 
     <!-- Настройки репликации -->
     <macros>
+        <cluster>clickhouse_cluster</cluster>
         <replica>clickhouse1</replica> <!-- Меняйте имя для каждой ноды -->
         <shard>shard1</shard>
     </macros>

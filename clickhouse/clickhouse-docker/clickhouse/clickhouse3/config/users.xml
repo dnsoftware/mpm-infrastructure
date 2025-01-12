@@ -2,6 +2,7 @@
     <!-- Пользователи -->
     <users>
         <default>
+            <access_management>1</access_management>
             <no_password/>
             <!-- Права доступа -->
             <networks>
@@ -18,6 +19,9 @@
             </networks>
             <profile>default</profile>
             <quota>default</quota>
+            <grants>
+                <query>GRANT ALL ON *.*</query>
+            </grants>
         </mpmhouse>
     </users>
 
