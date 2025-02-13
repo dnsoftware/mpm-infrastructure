@@ -27,3 +27,13 @@
 /kafka/kafka-local-docker/plugins/
 /Настройки/
 /gitlab_tests/vault.sh
+/etcd_local/etcd1-data/
+/etcd_local/etcd2-data/
+/etcd_local/etcd3-data/
+
+**/certs/*.crt
+**/certs/*.key
+**/certs/*.csr
+**/certs/*.srl
+**/certs/*.pem
+/etcd_local/assets/*
