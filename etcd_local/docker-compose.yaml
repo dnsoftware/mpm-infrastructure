@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  etcd1:
+    image: quay.io/coreos/etcd:v3.5.9
+    container_name: etcd1
+    environment:
+      - ETCD_NAME=etcd1
+      - ETCD_DATA_DIR=/var/lib/etcd
+      - ETCD_LISTEN_PEER_URLS=https://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=https://etcd1:2380
+      - ETCD_ADVERTISE_CLIENT_URLS=https://etcd1:2379
+      - ETCD_INITIAL_CLUSTER=etcd1=https://etcd1:2380,etcd2=https://etcd2:2380,etcd3=https://etcd3:2380
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_CLIENT_CERT_AUTH=true
+      - ETCD_TRUSTED_CA_FILE=/etc/etcd/certs/ca.pem
+      - ETCD_CERT_FILE=/etc/etcd/certs/server.pem
+      - ETCD_KEY_FILE=/etc/etcd/certs/server-key.pem
+      - ETCD_PEER_CLIENT_CERT_AUTH=true
+      - ETCD_PEER_TRUSTED_CA_FILE=/etc/etcd/certs/ca.pem
+      - ETCD_PEER_CERT_FILE=/etc/etcd/certs/peer.pem
+      - ETCD_PEER_KEY_FILE=/etc/etcd/certs/peer-key.pem
+      - ETCD_AUTH_TOKEN=simple
+    volumes:
+      - ./certs:/etc/etcd/certs
+      - ./etcd1-data:/var/lib/etcd
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    networks:
+      etcd-net:
+        aliases:
+          - etcd1
+
+  etcd2:
+    image: quay.io/coreos/etcd:v3.5.9
+    container_name: etcd2
+    environment:
+      - ETCD_NAME=etcd2
+      - ETCD_DATA_DIR=/var/lib/etcd
+      - ETCD_LISTEN_PEER_URLS=https://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=https://etcd2:2380
+      - ETCD_ADVERTISE_CLIENT_URLS=https://etcd2:2379
+      - ETCD_INITIAL_CLUSTER=etcd1=https://etcd1:2380,etcd2=https://etcd2:2380,etcd3=https://etcd3:2380
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_CLIENT_CERT_AUTH=true
+      - ETCD_TRUSTED_CA_FILE=/etc/etcd/certs/ca.pem
+      - ETCD_CERT_FILE=/etc/etcd/certs/server.pem
+      - ETCD_KEY_FILE=/etc/etcd/certs/server-key.pem
+      - ETCD_PEER_CLIENT_CERT_AUTH=true
+      - ETCD_PEER_TRUSTED_CA_FILE=/etc/etcd/certs/ca.pem
+      - ETCD_PEER_CERT_FILE=/etc/etcd/certs/peer.pem
+      - ETCD_PEER_KEY_FILE=/etc/etcd/certs/peer-key.pem
+      - ETCD_AUTH_TOKEN=simple
+    volumes:
+      - ./certs:/etc/etcd/certs
+      - ./etcd2-data:/var/lib/etcd
+    ports:
+      - "2479:2379"
+      - "2480:2380"
+    networks:
+      etcd-net:
+        aliases:
+          - etcd2
+
+  etcd3:
+    image: quay.io/coreos/etcd:v3.5.9
+    container_name: etcd3
+    environment:
+      - ETCD_NAME=etcd3
+      - ETCD_DATA_DIR=/var/lib/etcd
+      - ETCD_LISTEN_PEER_URLS=https://0.0.0.0:2380
+      - ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
+      - ETCD_INITIAL_ADVERTISE_PEER_URLS=https://etcd3:2380
+      - ETCD_ADVERTISE_CLIENT_URLS=https://etcd3:2379
+      - ETCD_INITIAL_CLUSTER=etcd1=https://etcd1:2380,etcd2=https://etcd2:2380,etcd3=https://etcd3:2380
+      - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
+      - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_CLIENT_CERT_AUTH=true
+      - ETCD_TRUSTED_CA_FILE=/etc/etcd/certs/ca.pem
+      - ETCD_CERT_FILE=/etc/etcd/certs/server.pem
+      - ETCD_KEY_FILE=/etc/etcd/certs/server-key.pem
+      - ETCD_PEER_CLIENT_CERT_AUTH=true
+      - ETCD_PEER_TRUSTED_CA_FILE=/etc/etcd/certs/ca.pem
+      - ETCD_PEER_CERT_FILE=/etc/etcd/certs/peer.pem
+      - ETCD_PEER_KEY_FILE=/etc/etcd/certs/peer-key.pem
+      - ETCD_AUTH_TOKEN=simple
+    volumes:
+      - ./certs:/etc/etcd/certs
+      - ./etcd3-data:/var/lib/etcd
+    ports:
+      - "2579:2379"
+      - "2580:2380"
+    networks:
+      etcd-net:
+        aliases:
+          - etcd3
+
+#  etcdkeeper:
+#    image: evildecay/etcdkeeper
+#    #image: evildecay/etcdkeeper
+#    container_name: etcdkeeper
+#    environment:
+#      # Адреса etcd с HTTPS
+#      - ETCD_ENDPOINTS=https://etcd1:2379,https://etcd2:2379,https://etcd3:2379
+#
+#      # Логин и пароль для etcd
+#      #- ETCD_USERNAME=root
+#      #- ETCD_PASSWORD=supersecret
+#
+#      - USETLS=true
+#
+#      # Пути к TLS-сертификатам
+#      - ETCD_CERT_FILE=/etc/etcd/certs/client.pem
+#      - ETCD_KEY_FILE=/etc/etcd/certs/client-key.pem
+#      - ETCD_CA_FILE=/etc/etcd/certs/ca.pem
+#
+#    volumes:
+#      - ./certs:/etc/etcd/certs
+#    command:
+#      - "-cert=/etc/etcd/certs/client.pem"
+#      - "-key=/etc/etcd/certs/client-key.pem"
+#      - "-cacert=/etc/etcd/ca.pem"
+#      - "-usetls=true"
+#      - "-auth=true"
+#    ports:
+#      - "18080:8080"
+#    networks:
+#      - etcd-net
+#    depends_on:
+#      - etcd1
+#      - etcd2
+#      - etcd3
+
+networks:
+  etcd-net:
+    driver: bridge

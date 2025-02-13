@@ -1,0 +1,16 @@
+{
+  "CN": "etcd CA",
+  "key": {
+    "algo": "rsa",
+    "size": 4096
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "San Francisco",
+      "O": "etcd",
+      "OU": "CA",
+      "ST": "California"
+    }
+  ]
+}
